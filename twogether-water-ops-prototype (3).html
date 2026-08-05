@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Twogether · Senseih Water Ops</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = { theme:{ extend:{
+    fontFamily:{ display:['"Space Grotesk"','sans-serif'], sans:['Inter','sans-serif'], mono:['"JetBrains Mono"','monospace'] },
+    colors:{ navy:'#0B1F3A', steel:'#1E3A5F', flow:'#0891B2', aqua:'#06B6D4' },
+    boxShadow:{ card:'0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.18)', lift:'0 12px 40px -12px rgba(11,31,58,.35)' }
+  }}}
+</script>
+<style>
+  html{scroll-behavior:smooth} body{background:#F1F5F9}
+  .waterline{height:3px;background:linear-gradient(90deg,transparent,#06B6D4 12%,#1D4ED8 50%,#0891B2 88%,transparent);background-size:220% 100%;animation:flow 6s linear infinite}
+  @keyframes flow{to{background-position:-220% 0}}
+  .scroll::-webkit-scrollbar{width:8px;height:8px}.scroll::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:8px}
+  .rise{animation:rise .28s cubic-bezier(.2,.8,.2,1)}@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .pop{animation:pop .2s cubic-bezier(.2,.8,.2,1)}@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+  .tab-active{color:#0B1F3A}.tab-active::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:#1D4ED8;border-radius:2px}
+  input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1D4ED8;outline-offset:2px}
+  .wave{display:flex;align-items:center;gap:2px;height:24px}.wave span{display:inline-block;width:3px;height:6px;background:currentColor;border-radius:2px;animation:wv 1s ease-in-out infinite}
+  @keyframes wv{0%,100%{height:5px}50%{height:22px}}
+  .scanbox{position:relative;overflow:hidden}.scanline{position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#22d3ee,transparent);box-shadow:0 0 12px #22d3ee;animation:scan 1.3s ease-in-out infinite}
+  @keyframes scan{0%{top:0}50%{top:100%}100%{top:0}}
+  .pulse-ring{animation:pr 1.4s ease-out infinite}@keyframes pr{0%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}100%{box-shadow:0 0 0 16px rgba(239,68,68,0)}}
+  .tickpop{animation:tp .5s cubic-bezier(.2,1.4,.4,1)}@keyframes tp{0%{transform:scale(0)}100%{transform:scale(1)}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body class="font-sans text-slate-800 min-h-screen">
+
+  <header class="sticky top-0 z-40 bg-navy text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-aqua to-blue-700 grid place-items-center shrink-0 shadow-lift">
+          <svg viewBox="0 0 24 24" class="w-5 h-5 text-white" fill="currentColor"><path d="M12 2.5s6.5 7 6.5 11.2A6.5 6.5 0 0 1 12 20.2a6.5 6.5 0 0 1-6.5-6.5C5.5 9.5 12 2.5 12 2.5z"/></svg>
+        </div>
+        <div class="min-w-0"><p class="font-display font-700 leading-tight tracking-tight truncate">Team&nbsp;Twogether</p>
+          <p class="text-[11px] text-slate-300 leading-tight truncate">Senseih Water Ops · 54-task master schema</p></div>
+      </div>
+      <nav class="bg-white/10 rounded-xl p-1 flex text-sm font-500 shrink-0">
+        <button id="nav-field" onclick="setView('field')" class="px-3 sm:px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition"><span>👷</span><span class="hidden sm:inline">Field Crew</span></button>
+        <button id="nav-cc" onclick="setView('cc')" class="px-3 sm:px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition"><span>🎧</span><span class="hidden sm:inline">Call Center</span></button>
+        <button id="nav-dashboard" onclick="setView('dashboard')" class="px-3 sm:px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition"><span>📊</span><span class="hidden sm:inline">Status &amp; Export</span>
+          <span id="queue-badge" class="hidden text-[10px] font-600 bg-amber-400 text-navy rounded-full px-1.5 py-0.5">0</span></button>
+      </nav>
+    </div>
+    <div class="waterline"></div>
+  </header>
+
+  <!-- FIELD CREW -->
+  <main id="view-field" class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div class="grid lg:grid-cols-[minmax(0,440px)_1fr] gap-8 items-start">
+      <section class="mx-auto w-full max-w-[440px]">
+        <div class="rounded-[28px] bg-navy p-2.5 shadow-lift"><div id="field-screen" class="rounded-[22px] bg-slate-50 overflow-hidden flex flex-col h-[640px]"></div></div>
+      </section>
+      <section class="space-y-5">
+        <div>
+          <p class="text-xs font-600 tracking-widest text-flow uppercase mb-2">Interface 1 · Field crew</p>
+          <h1 class="font-display font-700 text-3xl sm:text-4xl text-navy leading-[1.1] tracking-tight">Tap a picture.<br>Snap the fault. Talk.</h1>
+          <p class="text-slate-500 mt-3 max-w-lg">A visual, icon-led bot for crews on the ground. Quick actions launch the common jobs in one tap; a photo <b>vision scan</b> reads the defect and a <b>voice note</b> types itself. Streaks and points make it stickier than the paper log.</p>
+        </div>
+        <div id="field-sys"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- CALL CENTER -->
+  <main id="view-cc" class="hidden max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div class="mb-6">
+      <p class="text-xs font-600 tracking-widest text-flow uppercase mb-1">Interface 2 · Call center &amp; admin</p>
+      <h1 class="font-display font-700 text-3xl text-navy tracking-tight">Dual-mode intake desk</h1>
+      <p class="text-slate-500 mt-2 max-w-2xl">Log a call as a clean <b>guided report</b>, or drop in raw customer input — a photo, a transcript, freeform notes — and let the <b>AI processor</b> OCR, transcribe and map it into the same structured template.</p>
+    </div>
+    <div class="grid lg:grid-cols-[1fr_320px] gap-6 items-start">
+      <div id="cc-body" class="bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-6"></div>
+      <aside id="cc-sys"></aside>
+    </div>
+  </main>
+
+  <!-- STATUS & EXPORT -->
+  <main id="view-dashboard" class="hidden max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div class="flex items-end justify-between flex-wrap gap-4 mb-6">
+      <div><p class="text-xs font-600 tracking-widest text-flow uppercase mb-1">Phase 1 · Status &amp; data export</p>
+        <h1 class="font-display font-700 text-3xl text-navy tracking-tight">Standardized records</h1></div>
+      <div id="stat-row" class="flex gap-2 flex-wrap"></div>
+    </div>
+    <div class="grid lg:grid-cols-[1fr_320px] gap-6 items-start">
+      <section class="bg-white rounded-2xl border border-slate-200 shadow-card overflow-hidden">
+        <div class="border-b border-slate-100 px-4 sm:px-5 flex items-center justify-between gap-3">
+          <div id="tabs" class="flex gap-5 overflow-x-auto text-sm font-500 text-slate-500"></div>
+          <button onclick="exportAll()" class="shrink-0 my-2 text-[12px] font-600 text-white bg-navy hover:bg-steel rounded-lg px-3 py-1.5 transition flex items-center gap-1.5">
+            <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/></svg>Export all</button>
+        </div>
+        <div class="scroll overflow-x-auto"><table class="w-full text-sm min-w-[760px]">
+          <thead><tr class="text-[11px] uppercase tracking-wider text-slate-400 text-left">
+            <th class="font-600 px-5 py-3">Issue</th><th class="font-600 px-3 py-3">Location</th><th class="font-600 px-3 py-3">Channel</th>
+            <th class="font-600 px-3 py-3">Reported</th><th class="font-600 px-3 py-3">Status</th><th class="font-600 px-3 py-3 text-right">Action</th>
+          </tr></thead><tbody id="task-body" class="divide-y divide-slate-100"></tbody></table></div>
+        <div id="empty-state" class="hidden py-16 text-center"><p class="text-slate-400 text-sm">Nothing here yet. New reports land as <b class="text-slate-600">New</b> records.</p></div>
+      </section>
+      <aside class="space-y-5">
+        <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5">
+          <p class="font-600 text-sm text-navy mb-1.5">Data export</p>
+          <p class="text-xs text-slate-600 leading-relaxed">Every record exports in the Phase 1 master schema — <span class="font-mono text-[11px]">issue</span>, <span class="font-mono text-[11px]">report</span>, <span class="font-mono text-[11px]">location</span>, <span class="font-mono text-[11px]">task_details</span>, <span class="font-mono text-[11px]">attachments</span> — with IWA loss classification tagged on <span class="font-mono text-[11px]">issue</span>.</p>
+          <button onclick="exportAll()" class="mt-3 w-full bg-navy hover:bg-steel text-white text-[13px] font-600 rounded-xl py-2 transition">Export all records (JSON)</button>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-card">
+          <p class="font-600 text-sm text-navy mb-2">IWA loss classification</p>
+          <div class="space-y-1.5 text-[12px]">
+            <p class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>Real Loss — physical leakage (mains, service)</p>
+            <p class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-violet-500"></span>Apparent Loss — metering inaccuracy</p>
+            <p class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>NRW Data — commercial &amp; billing</p>
+            <p class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>Authorized — production &amp; operations</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <div id="modal-root"></div>
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] hidden">
+    <div class="bg-navy text-white text-sm px-4 py-2.5 rounded-xl shadow-lift flex items-center gap-2 pop"><span id="toast-icon">✓</span><span id="toast-msg"></span></div>
+  </div>
+
+<script>
+/* ============================================================
+   MASTER TASK SCHEMA — verbatim from Senseih Water Utility
+   Daily Work Report 2025 (54 task types · 6 category classes)
+   IWA loss classification is tagged onto each real task.
+   ============================================================ */
+const CAT_STYLE = {
+  pipe:  {tile:'bg-rose-50 border-rose-200 hover:border-rose-400',     ico:'bg-rose-100 text-rose-600',    text:'text-rose-700'},
+  csr:   {tile:'bg-amber-50 border-amber-200 hover:border-amber-400',  ico:'bg-amber-100 text-amber-600',  text:'text-amber-700'},
+  meter: {tile:'bg-violet-50 border-violet-200 hover:border-violet-400',ico:'bg-violet-100 text-violet-600',text:'text-violet-700'},
+  treat: {tile:'bg-cyan-50 border-cyan-200 hover:border-cyan-400',     ico:'bg-cyan-100 text-cyan-600',    text:'text-cyan-700'},
+  admin: {tile:'bg-blue-50 border-blue-200 hover:border-blue-400',     ico:'bg-blue-100 text-blue-600',    text:'text-blue-700'},
+  other: {tile:'bg-slate-50 border-slate-200 hover:border-slate-400',  ico:'bg-slate-100 text-slate-600',  text:'text-slate-700'},
+};
+const CAT_LABEL = {pipe:'Pipeline and Infrastructure',csr:'Customer Service Request',meter:'Water Meter Services',treat:'Water Treatment Operation',admin:'Billing and Administration',other:'Others not clearly defined'};
+const IWA_ASSET = {pipe:'Distribution Main',csr:'Service / Customer',meter:'Customer Meter',treat:'Treatment / Production',admin:'Commercial',other:'Other'};
+const LOSS_STYLE = {'Real Loss':'bg-rose-100 text-rose-700','Apparent Loss':'bg-violet-100 text-violet-700','NRW Data':'bg-blue-100 text-blue-700','Authorized':'bg-emerald-100 text-emerald-700','Unclassified':'bg-slate-100 text-slate-600'};
+const URG_STYLE = {High:'bg-red-100 text-red-700',Medium:'bg-amber-100 text-amber-700',Low:'bg-slate-100 text-slate-600'};
+const STATUS_STYLE = {New:'bg-amber-100 text-amber-700',Opened:'bg-blue-100 text-blue-700'};
+const STATUSES = ['New','Opened'];
+
+const T = {};
+function reg(slug,name,icon,cat,loss,fields){ T[slug]={name,icon,cat,loss,iwa:IWA_ASSET[cat],fields}; }
+const sel=(opts)=>opts; // readability
+
+/* --- Pipeline and Infrastructure --- */
+reg('repair_pipe','Repair Pipe','🔧','pipe','Real Loss',[
+  {k:'location',label:'Location',type:'text',req:true,ph:'e.g. DMA-03, Jalan Besar'},
+  {k:'damage',label:'Type of Damage',type:'select',req:true,opts:['Leak','Burst','Crack']},
+  {k:'severity',label:'Severity',type:'select',req:true,opts:['Minor','Major']},
+  {k:'photo',label:'Photo',type:'photo',req:false}]);
+reg('lay_pipe','Lay Pipe','🧱','pipe','Authorized',[
+  {k:'location',label:'Location',type:'text',req:true},
+  {k:'material',label:'Pipe Material & Length',type:'text',req:true,ph:'e.g. PE 40m'},
+  {k:'points',label:'Connection Point(s)',type:'text',req:true},
+  {k:'diameter',label:'Pipe Diameter',type:'select',req:true,opts:['15mm','25mm','50mm','90mm','110mm','160mm','200mm','315mm']},
+  {k:'photo',label:'Photo',type:'photo',req:false}]);
+reg('fuse_weld_pipe','Fuse / Weld Pipe','🔩','pipe','Real Loss',[
+  {k:'location',label:'Location',type:'text',req:true},
+  {k:'material',label:'Pipe Material',type:'select',req:true,opts:['PE','PVC','FETTO','Other']},
+  {k:'size',label:'Pipe Size',type:'select',req:true,opts:['25mm','50mm','90mm','110mm','160mm','200mm']},
+  {k:'reason',label:'Reason for Fusing / Welding',type:'text',req:true}]);
+reg('request_replace_main','Request to Replace Main Pipeline System','📋','pipe','Real Loss',[
+  {k:'location',label:'Pipeline Location',type:'text',req:true},
+  {k:'reason',label:'Reason for Request',type:'text',req:true},
+  {k:'severity',label:'Problem Severity',type:'select',req:true,opts:['Low','Medium','High']},
+  {k:'diameter',label:'Pipe Diameter',type:'select',req:true,opts:['110mm','160mm','200mm','315mm','400mm']},
+  {k:'material',label:'Pipe Material',type:'select',req:true,opts:['PE','PVC','FETTO','Other']},
+  {k:'photo',label:'Photo',type:'photo',req:false}]);
+reg('replace_main','Replace Main Pipeline System','🛠️','pipe','Real Loss',[
+  {k:'location',label:'Pipeline Location',type:'text',req:true},
+  {k:'material',label:'Existing Pipe Material',type:'select',req:true,opts:['PE','PVC','FETTO','Other']},
+  {k:'size',label:'Existing Pipe Size',type:'select',req:true,opts:['110mm','160mm','200mm','315mm','400mm']},
+  {k:'reason',label:'Reason for Replacement',type:'text',req:true}]);
+
+/* --- Customer Service Request --- */
+reg('new_water_connection','New Water Connection','🚰','csr','Authorized',[
+  {k:'customer',label:'Customer Name',type:'text',req:true},
+  {k:'contact',label:'Contact Number',type:'text',req:true},
+  {k:'address',label:'Service Address',type:'text',req:true},
+  {k:'building',label:'Building Type',type:'select',req:true,opts:['House','Shop','Business']},
+  {k:'meter',label:'Water Meter Serial Number',type:'text',req:true},
+  {k:'install',label:'Installation Date',type:'date',req:true}]);
+reg('inspect_customer_location','Inspect Customer Location','🔍','csr','Authorized',[
+  {k:'customer',label:'Customer Name',type:'text',req:true},
+  {k:'address',label:'Service Address',type:'text',req:true},
+  {k:'reason',label:'Reason for Inspection',type:'text',req:true},
+  {k:'photo',label:'Photo',type:'photo',req:false}]);
+reg('suspend_water_usage',"Suspend Customer's Water Usage",'⏸️','csr','Authorized',[
+  {k:'meter',label:'Water Meter Serial Number',type:'text',req:true},
+  {k:'reason',label:'Reason for Suspension',type:'text',req:true},
+  {k:'method',label:'Method of Suspension',type:'select',req:true,opts:['Valve Off','Meter Removal','Cap Off']},
+  {k:'owing',label:'Amount Owing',type:'number',req:false},
+  {k:'photo',label:'Photo',type:'photo',req:false}]);
+reg('request_reconnection','Request Water Reconnection','🔌','csr','Authorized',[
+  {k:'meter',label:'Water Meter Serial Number',type:'text',req:true},
+  {k:'reason',label:'Reason for Reconnection',type:'text',req:true},
+  {k:'method',label:'Method of Reconnection',type:'select',req:true,opts:['Valve On','Meter Re-fit','Uncap']},
+  {k:'owing',label:'Amount Owing',type:'number',req:false},
+  {k:'photo',label:'Photo',type:'photo',req:false}]);
+reg('temp_suspend','Temporarily Suspend Water Usage','⏳','csr','Authorized',[
+  {k:'customer',label:'Customer Name',type:'text',req:true},
+  {k:'address',label:'Service Address',type:'text',req:true},
+  {k:'account',label:'Account / Meter Number',type:'text',req:true},
+  {k:'reason',label:'Reason for Suspension',type:'text',req:true},
+  {k:'effective',label:'Effective Date',type:'date',req:true}]);
+reg('reconnect_supply',"Reconnect Customer's Water Supply",'▶️','csr','Authorized',[
+  {k:'customer',label:'Customer Name',type:'text',req:true},
+  {k:'address',label:'Service Address',type:'text',req:true},
+  {k:'account',label:'Account / Meter Number',type:'text',req:true},
+  {k:'reason',label:'Reason for Reconnection',type:'text',req:true}]);
+reg('request_termination','Request Permanent Water Service Termination','🚫','csr','Authorized',[
+  {k:'requested',label:'Requested Date & Time',type:'text',req:true,ph:'e.g. 2026-07-21 09:00'},
+  {k:'location',label:'Location',type:'text',req:true},
+  {k:'account',label:'Customer Account / Meter No.',type:'text',req:true},
+  {k:'size',label:'Existing Pipe Size',type:'select',req:true,opts:['15mm','25mm','50mm','90mm','110mm']},
+  {k:'reason',label:'Reason for Termination',type:'text',req:true},
+  {k:'priority',label:'Priority',type:'select',req:true,opts:['Low','Medium','High']},
+  {k:'officer',label:'Assigned Officer',type:'text',req:true},
+  {k:'photo',label:'Photo',type:'photo',req:false},
+  {k:'pressure',label:'Pipeline Pressure Reading',type:'number',req:true}]);
+
+/* --- Water Meter Services --- */
+reg('replace_water_meter','Replace Water Meter','📟','meter','Apparent Loss',[
+  {k:'customer',label:'Customer Name',type:'text',req:true},
+  {k:'address',label:'Service Address',type:'text',req:true},
+  {k:'existing',label:'Existing Meter Number',type:'text',req:true,ph:'e.g. WM-4412'},
+  {k:'reason',label:'Reason for Replacement',type:'select',req:true,opts:['Under-registration','Faulty','Aged','Damaged','Tampered']},
+  {k:'meter',label:'Water Meter Serial Number',type:'text',req:true},
+  {k:'install',label:'Installation Date',type:'date',req:true}]);
+reg('relocate_water_meter','Relocate Water Meter','📍','meter','Authorized',[
+  {k:'customer',label:'Customer Name',type:'text',req:true},
+  {k:'address',label:'Service Address',type:'text',req:true},
+  {k:'from',label:'Existing Meter Location',type:'text',req:true},
+  {k:'to',label:'New Meter Location',type:'text',req:true},
+  {k:'reading',label:'Current Meter Reading',type:'number',req:true}]);
+reg('raise_water_meter','Raise Water Meter','⬆️','meter','Authorized',[
+  {k:'account',label:'Customer / Account No.',type:'text',req:true},
+  {k:'meter',label:'Meter Serial Number',type:'text',req:true},
+  {k:'reason',label:'Reason for Raising',type:'text',req:false},
+  {k:'photo_before',label:'Photo (Before)',type:'photo',req:false},
+  {k:'photo_after',label:'Photo (After)',type:'photo',req:false}]);
+reg('clean_water_meter','Clean Water Meter','🧽','meter','Apparent Loss',[
+  {k:'meter',label:'Meter Serial Number',type:'text',req:true},
+  {k:'obstruction',label:'Obstruction Type',type:'select',req:true,opts:['Silt','Debris','Corrosion','Airlock']},
+  {k:'readable',label:'Register Readable Now',type:'select',req:false,opts:['Yes','No']},
+  {k:'photo_before',label:'Photo (Before)',type:'photo',req:false},
+  {k:'photo_after',label:'Photo (After)',type:'photo',req:false}]);
+reg('reread_water_meter','Re-read Water Meter','🔁','meter','Apparent Loss',[
+  {k:'meter',label:'Meter Serial Number',type:'text',req:true},
+  {k:'reason',label:'Reason for Re-read',type:'text',req:false},
+  {k:'prev',label:'Previous Reading & Date',type:'text',req:true},
+  {k:'newreading',label:'New Reading (m³)',type:'number',req:true},
+  {k:'photo',label:'Meter Register Photo',type:'photo',req:false},
+  {k:'anomaly',label:'Anomaly vs Previous Reading',type:'select',req:true,opts:['None','Higher than expected','Lower than expected','Negative']}]);
+reg('read_water_meter','Read Water Meter (Usage)','🔢','meter','Authorized',[
+  {k:'meter',label:'Meter Serial Number',type:'text',req:true},
+  {k:'reading',label:'Current Reading (m³)',type:'number',req:true},
+  {k:'photo',label:'Meter Register Photo',type:'photo',req:false},
+  {k:'access',label:'Meter Accessible',type:'select',req:true,opts:['Yes','No']},
+  {k:'condition',label:'Meter Condition',type:'select',req:true,opts:['Good','Damaged','Obstructed']}]);
+reg('inspect_measure_meter','Inspect & Measure Water Meter','📐','meter','Apparent Loss',[
+  {k:'meter',label:'Water Meter Serial Number',type:'text',req:true},
+  {k:'reading',label:'Current Reading',type:'number',req:true},
+  {k:'prev',label:'Previous Reading & Date',type:'text',req:true},
+  {k:'condition',label:'Meter Condition',type:'select',req:true,opts:['Good','Damaged','Obstructed']},
+  {k:'photo',label:'Photo',type:'photo',req:false}]);
+
+/* --- Water Treatment Operation --- */
+const F_CL=[{k:'dose',label:'Chlorine Dose (kg)',type:'number',req:true},{k:'residual',label:'Residual Chlorine (mg/L)',type:'number',req:true},{k:'time',label:'Time Dosed',type:'time',req:true},{k:'photo',label:'Photo',type:'photo',req:false}];
+const F_CO=[{k:'coagulant',label:'Coagulant Type',type:'text',req:true},{k:'dose',label:'Dose (mg/L)',type:'number',req:true},{k:'mix',label:'Mixing Duration (min)',type:'number',req:true},{k:'photo',label:'Photo',type:'photo',req:false}];
+const F_AL=[{k:'dose',label:'PAC Dose (mg/L)',type:'number',req:true},{k:'volume',label:'Volume Added (L)',type:'number',req:true},{k:'photo',label:'Photo',type:'photo',req:false}];
+const F_PU=[{k:'duration',label:'Pump Duration (min)',type:'number',req:true},{k:'volume',label:'Sludge Volume (m³)',type:'number',req:true},{k:'photo',label:'Photo',type:'photo',req:false}];
+const F_DR=[{k:'duration',label:'Drain Duration (min)',type:'number',req:true},{k:'photo',label:'Photo',type:'photo',req:false}];
+const TREAT_GROUPS=[
+  {icon:'🧪',fields:F_CL,names:['Add Chlorine - Tank 01 (East)','Add Chlorine - Tank 02 (Front/Lower)','Add Chlorine - Tank 03 (Rear/Lower)','Add Chlorine - Tank 04 (Middle)','Add Chlorine - Tank 05','Add Chlorine - Tank 06'],slug:'chlorine'},
+  {icon:'🌀',fields:F_CO,names:['Dose/Stir Coagulant - Single Basin','Dose/Stir Coagulant - Middle Basin','Dose/Stir Coagulant - West Basin','Dose/Stir Coagulant - Basin 4','Dose/Stir Coagulant - Basin 5'],slug:'coag'},
+  {icon:'⚗️',fields:F_AL,names:['Add Alum (PAC) - Tank 1, Single Basin','Add Alum (PAC) - Tank 2, Middle Basin','Add Alum (PAC) - Tank 3, West Basin','Add Alum (PAC) - Tank 4','Add Alum (PAC) - Tank 5'],slug:'alum'},
+  {icon:'🛢️',fields:F_PU,names:['Pump Coagulant/Sludge - Basin 1, Single Basin','Pump Coagulant/Sludge - Basin 2, Middle Basin','Pump Coagulant/Sludge - Basin 3, West Basin','Pump Coagulant/Sludge - Basin 04','Pump Coagulant/Sludge - Basin 05'],slug:'pump'},
+  {icon:'🚿',fields:F_DR,names:['Drain Coagulant/Sludge - Single Basin, Valve 1','Drain Coagulant/Sludge - Middle Basin, Valve 1','Drain Coagulant/Sludge - West Basin, Valve 1','Drain Coagulant/Sludge - Basin 04','Drain Coagulant/Sludge - Basin 05'],slug:'drain'},
+];
+const TREAT_SLUGS=[];
+TREAT_GROUPS.forEach(g=>g.names.forEach((nm,i)=>{const s=g.slug+'_'+(i+1);reg(s,nm,g.icon,'treat','Authorized',g.fields);TREAT_SLUGS.push(s);}));
+reg('add_diesel','Add Diesel Fuel to Engine','⛽','treat','Authorized',[
+  {k:'engine',label:'Engine / Generator ID',type:'text',req:true},
+  {k:'diesel',label:'Diesel Added (L)',type:'number',req:true},
+  {k:'hours',label:'Running Hours',type:'number',req:false},
+  {k:'photo',label:'Photo',type:'photo',req:false}]);
+reg('replace_motor','Replace Motor','⚙️','treat','Authorized',[
+  {k:'asset',label:'Asset / Pump ID',type:'text',req:true},
+  {k:'existing',label:'Existing Motor Rating',type:'text',req:true},
+  {k:'newrating',label:'New Motor Rating',type:'text',req:true},
+  {k:'reason',label:'Reason for Replacement',type:'text',req:true},
+  {k:'photo',label:'Photo',type:'photo',req:false}]);
+reg('water_quality_test','Perform Water Quality Test','💠','treat','Authorized',[
+  {k:'point',label:'Sample Point',type:'text',req:true},
+  {k:'ph',label:'pH',type:'number',req:true},
+  {k:'turbidity',label:'Turbidity (NTU)',type:'number',req:true},
+  {k:'residual',label:'Residual Cl₂ (mg/L)',type:'number',req:false},
+  {k:'result',label:'Result',type:'select',req:true,opts:['Pass','Fail']}]);
+reg('inspect_raw_water_pump','Inspect Raw Water Pump/Motor','🔧','treat','Authorized',[
+  {k:'asset',label:'Pump / Motor ID',type:'text',req:true},
+  {k:'condition',label:'Condition',type:'select',req:true,opts:['Good','Fair','Faulty']},
+  {k:'vibration',label:'Vibration / Noise',type:'select',req:true,opts:['Normal','Abnormal']},
+  {k:'action',label:'Action Taken',type:'text',req:true},
+  {k:'photo',label:'Photo',type:'photo',req:false}]);
+
+/* --- Billing and Administration --- */
+reg('distribute_water_bills','Distribute Water Bills','📄','admin','NRW Data',[
+  {k:'zone',label:'Route / Zone',type:'text',req:true},
+  {k:'toDeliver',label:'Bills to Deliver (Count)',type:'number',req:true},
+  {k:'delivered',label:'Bills Delivered (Count)',type:'number',req:true},
+  {k:'status',label:'Delivery Status',type:'select',req:true,opts:['Complete','Partial','Failed']},
+  {k:'undelivered',label:'Undelivered Reason',type:'text',req:false},
+  {k:'photo',label:'Proof of Delivery Photo',type:'photo',req:false}]);
+reg('contract_legal','Contract / Legal Document','📑','admin','Authorized',[
+  {k:'docid',label:'Document ID',type:'text',req:true},
+  {k:'org',label:'Customer / Organisation Name',type:'text',req:true},
+  {k:'doctype',label:'Document Type',type:'text',req:true},
+  {k:'site',label:'Location / Site',type:'text',req:true},
+  {k:'status',label:'Status',type:'select',req:true,opts:['Draft','Active','Expired','Terminated']},
+  {k:'assigned',label:'Assigned To',type:'text',req:true},
+  {k:'due',label:'Due Date',type:'date',req:false},
+  {k:'docs',label:'Supporting Documents',type:'photo',req:false},
+  {k:'remarks',label:'Remarks',type:'text',req:false}]);
+reg('write_report','Write Report','📝','admin','Authorized',[
+  {k:'type',label:'Report Type',type:'text',req:true},
+  {k:'related',label:'Related Job ID',type:'text',req:true},
+  {k:'dept',label:'Department',type:'select',req:true,opts:['Network','Production','Commercial','NRW']},
+  {k:'status',label:'Status',type:'select',req:true,opts:['Draft','Submitted','Reviewed']},
+  {k:'file',label:'Report File',type:'photo',req:true},
+  {k:'summary',label:'Summary',type:'text',req:false},
+  {k:'reviewer',label:'Reviewer',type:'text',req:false}]);
+
+/* --- Others not clearly defined --- */
+reg('express_service','Express Service','⚡','other','Authorized',[
+  {k:'underlying',label:'Underlying Job Type',type:'text',req:true},
+  {k:'location',label:'Location',type:'text',req:true},
+  {k:'sla',label:'SLA Window',type:'select',req:true,opts:['2 hours','4 hours','Same day']},
+  {k:'reason',label:'Reason for Express Service',type:'text',req:false},
+  {k:'photo',label:'Photo',type:'photo',req:false}]);
+reg('other','Other','➕','other','Unclassified',[
+  {k:'category',label:'Category',type:'text',req:true},
+  {k:'description',label:'Description',type:'text',req:true},
+  {k:'priority',label:'Priority',type:'select',req:true,opts:['Low','Medium','High']},
+  {k:'photo',label:'Photo',type:'photo',req:false}]);
+
+/* Category classifications — exact master-sheet groupings */
+const CATEGORIES = {
+  'Pipeline and Infrastructure':['repair_pipe','lay_pipe','fuse_weld_pipe','request_replace_main','replace_main'],
+  'Customer Service Request':['new_water_connection','inspect_customer_location','suspend_water_usage','request_reconnection','temp_suspend','reconnect_supply','request_termination'],
+  'Water Meter Services':['replace_water_meter','relocate_water_meter','raise_water_meter','clean_water_meter','reread_water_meter','read_water_meter','inspect_measure_meter'],
+  'Water Treatment Operation':[...TREAT_SLUGS,'add_diesel','replace_motor','water_quality_test','inspect_raw_water_pump'],
+  'Billing and Administration':['distribute_water_bills','contract_legal','write_report'],
+  'Others not clearly defined':['express_service','other'],
+};
+const TOTAL_TASKS = Object.values(CATEGORIES).reduce((a,b)=>a+b.length,0); // 54
+
+/* Quick actions + field tiles reference exact master task slugs */
+const QUICK = ['repair_pipe','replace_water_meter','new_water_connection'];
+
+/* Field-crew vision/voice sims (per real task, with fallback) */
+const SCAN = {
+  repair_pipe:{label:'Pipe burst detected',vals:{damage:'Burst',severity:'Major'}},
+  replace_water_meter:{label:'Meter serial read: WM-4412',vals:{existing:'WM-4412'}},
+  new_water_connection:{label:'Meter serial read: WM-9002',vals:{meter:'WM-9002'}},
+  read_water_meter:{label:'Register read: 002317',vals:{reading:'2317'}},
+  _def:{label:'Defect captured from photo',vals:{}},
+};
+const VOICE = {
+  repair_pipe:{t:'Big burst on the main at Jalan Besar, water flooding the road near the market.',v:{location:'Jalan Besar, near market'}},
+  replace_water_meter:{t:'Customer meter at 42 Riverside is under-registering, needs replacing.',v:{address:'42 Riverside Rd',customer:'Lim Wei'}},
+  new_water_connection:{t:'New shop connection needed at 118 Market Street for Sok Dara.',v:{address:'118 Market St',customer:'Sok Dara'}},
+  read_water_meter:{t:'Meter WM-3391 reads 2317, accessible and in good condition.',v:{meter:'WM-3391',access:'Yes',condition:'Good'}},
+  _def:{t:'Reporting an issue on site, please take a look.',v:{}},
+};
+
+/* ============================================================ STATE */
+let jobCounter = 92;
+function nextJobId(){jobCounter++;return `JOB-2026-${String(jobCounter).padStart(3,'0')}`;}
+function nowTs(){return new Date().toISOString().slice(0,16).replace('T',' ');}
+const state = {
+  view:'field', activeTab:'All Tasks', tasks:seedTasks(),
+  game:{streak:5,points:120,today:11}, browseQuery:'',
+  field:{step:'pick',jobKey:null,values:{},gps:null,scanned:false,voiced:false,busy:false,earned:0},
+  cc:{mode:null,stage:'pick',jobKey:null,values:{},gps:null,raw:'',srcImg:false,srcVoice:false,query:''},
+};
+function seedTasks(){return [
+  {id:'JOB-2026-081',jobKey:'repair_pipe',title:T.repair_pipe.name,loc:'DMA-03, Jalan Besar',urgency:'High',loss:'Real Loss',channel:'Field App',status:'New',reporter:'@field_thinh',ts:'2026-07-21 08:14',gps:{lat:11.556,lng:104.928},details:{location:'DMA-03, Jalan Besar',damage:'Burst',severity:'Major'}},
+  {id:'JOB-2026-078',jobKey:'replace_water_meter',title:T.replace_water_meter.name,loc:'42 Riverside Rd',urgency:'Medium',loss:'Apparent Loss',channel:'Call Center',status:'Opened',reporter:'@cc_agent',ts:'2026-07-21 07:50',gps:{lat:11.561,lng:104.911},details:{customer:'Lim Wei',address:'42 Riverside Rd',existing:'WM-4412',reason:'Under-registration',meter:'WM-7781'}},
+  {id:'JOB-2026-076',jobKey:'read_water_meter',title:T.read_water_meter.name,loc:'Blk 9, Lower East',urgency:'Low',loss:'Authorized',channel:'Field App',status:'New',reporter:'@field_thinh',ts:'2026-07-20 16:30',gps:{lat:11.549,lng:104.933},details:{meter:'WM-3391',reading:'2317',access:'Yes',condition:'Good'}},
+  {id:'JOB-2026-069',jobKey:'water_quality_test',title:T.water_quality_test.name,loc:'Clearwell · Outlet B',urgency:'Medium',loss:'Authorized',channel:'Telegram',status:'Opened',reporter:'@lab_kevin',ts:'2026-07-20 14:10',gps:null,details:{point:'Outlet B',ph:'7.2',turbidity:'0.8',result:'Pass'}},
+  {id:'JOB-2026-063',jobKey:'new_water_connection',title:T.new_water_connection.name,loc:'118 Market St',urgency:'Low',loss:'Authorized',channel:'Call Center',status:'New',reporter:'@cc_agent',ts:'2026-07-19 11:20',gps:{lat:11.570,lng:104.900},details:{customer:'Sok Dara',contact:'012 345 678',address:'118 Market St',building:'Shop',meter:'WM-9002'}},
+];}
+
+/* ============================================================ VIEW SWITCH */
+function setView(v){
+  state.view=v;
+  ['field','cc','dashboard'].forEach(x=>document.getElementById('view-'+x).classList.toggle('hidden',x!==v));
+  const on='bg-white text-navy', off='text-slate-200 hover:text-white';
+  document.getElementById('nav-field').className='px-3 sm:px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition '+(v==='field'?on:off);
+  document.getElementById('nav-cc').className='px-3 sm:px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition '+(v==='cc'?on:off);
+  document.getElementById('nav-dashboard').className='px-3 sm:px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition '+(v==='dashboard'?on:off);
+  if(v==='field'){renderField(); document.getElementById('field-sys').innerHTML=systemFieldsBanner('Field App','field_thinh');}
+  if(v==='cc'){renderCC(); document.getElementById('cc-sys').innerHTML=systemFieldsBanner('Call Center','cc_agent');}
+  if(v==='dashboard') renderDashboard();
+  window.scrollTo({top:0});
+}
+
+/* ============================================================ SYSTEM FIELDS BANNER (A/B/C) */
+function systemFieldsBanner(channel,reporter){
+  const now=new Date().toLocaleString('en-SG',{hour12:false});
+  const rows=[
+    ['Job ID','<span class="text-slate-500">— auto on submit —</span>'],
+    ['Timestamp',`<span class="text-slate-300">${now}</span>`],
+    ['Reporter ID',`<span class="text-slate-300">${reporter}</span>`],
+    ['Channel',`<span class="text-aqua">${channel}</span>`],
+    ['GPS','<span class="text-amber-400">pending · conditional</span>'],
+  ];
+  return `<div class="space-y-4">
+    <div class="bg-navy rounded-2xl p-5 text-slate-100 shadow-card">
+      <div class="flex items-center justify-between mb-3"><p class="text-xs font-600 tracking-wider uppercase text-slate-400">System fields · captured silently</p>
+        <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-aqua">auto</span></div>
+      <dl class="grid grid-cols-2 gap-x-6 gap-y-3 font-mono text-[13px]">
+        ${rows.map(([l,v])=>`<div><dt class="text-[10px] uppercase tracking-wider text-slate-500">${l}</dt><dd class="mt-0.5">${v}</dd></div>`).join('')}
+      </dl>
+      <p class="text-[11px] text-amber-300/80 mt-3 flex items-center gap-1.5">📍 If GPS is disabled on the device, the bot requests a location at the validation step.</p>
+    </div>
+    <div class="grid sm:grid-cols-3 gap-3">
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-card"><p class="font-600 text-slate-900 text-sm mb-1">A · Auto</p><p class="text-xs text-slate-500 leading-relaxed">Job ID, timestamp, reporter, channel — filled silently by the system.</p></div>
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-card"><p class="font-600 text-slate-900 text-sm mb-1">B · Conditional</p><p class="text-xs text-slate-500 leading-relaxed">GPS, if shared by the device — requested at validation if missing.</p></div>
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-card"><p class="font-600 text-slate-900 text-sm mb-1">C · Manual</p><p class="text-xs text-slate-500 leading-relaxed">Job-specific answers supplied directly by the user or agent.</p></div>
+    </div>
+  </div>`;
+}
+
+/* ============================================================ QUICK ACTIONS + BROWSE-54 MODAL */
+function quickBar(handler,big){
+  const tiles=QUICK.map(k=>{const c=CAT_STYLE[T[k].cat];
+    return big
+    ? `<button onclick="${handler}('${k}')" class="rise ${c.tile} border-2 rounded-2xl p-4 flex items-center gap-3 transition active:scale-95 text-left">
+        <div class="w-12 h-12 rounded-xl ${c.ico} grid place-items-center text-2xl shrink-0">${T[k].icon}</div>
+        <div><p class="font-600 text-[14px] text-slate-800 leading-tight">${T[k].name}</p><p class="text-[11px] ${c.text} font-600 mt-0.5">${T[k].loss}</p></div></button>`
+    : `<button onclick="${handler}('${k}')" class="flex items-center gap-2 px-3 py-2.5 rounded-xl border ${c.tile} border-2 transition text-left">
+        <span class="w-8 h-8 rounded-lg ${c.ico} grid place-items-center shrink-0">${T[k].icon}</span>
+        <span class="text-[13px] font-600 text-slate-800 leading-tight">${T[k].name}</span></button>`;
+  }).join('');
+  const browse=`<button onclick="openBrowse('${handler}')" class="${big?'':'col-span-2 sm:col-span-1'} flex items-center justify-center gap-2 px-3 py-${big?'3.5':'2.5'} rounded-xl border-2 border-dashed border-slate-300 hover:border-blue-400 hover:bg-blue-50 text-[13px] font-600 text-slate-600 transition ${big?'mt-1':''}"><span>📁</span> Browse ${TOTAL_TASKS} categories</button>`;
+  return `<div>
+    <p class="text-[11px] font-600 tracking-wider uppercase text-flow flex items-center gap-1 mb-2">⚡ Quick actions</p>
+    <div class="${big?'space-y-2.5':'grid grid-cols-2 gap-2'}">${tiles}${browse}</div>
+  </div>`;
+}
+function openBrowse(handler){ state.browseQuery=''; renderBrowse(handler); }
+function renderBrowse(handler){
+  const q=(state.browseQuery||'').toLowerCase();
+  const groups=Object.entries(CATEGORIES).map(([cat,keys])=>{
+    const items=keys.filter(k=>T[k].name.toLowerCase().includes(q)||cat.toLowerCase().includes(q));
+    if(!items.length) return '';
+    return `<div class="mb-3"><p class="text-[11px] font-600 uppercase tracking-wider text-slate-400 mb-1.5 sticky top-0 bg-white py-1">${cat} <span class="text-slate-300">· ${keys.length}</span></p>
+      <div class="grid sm:grid-cols-2 gap-2">${items.map(k=>{const c=CAT_STYLE[T[k].cat];return `
+        <button onclick="closeModal();${handler}('${k}')" class="text-left px-3 py-2 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition flex items-center gap-2.5">
+          <span class="w-8 h-8 rounded-lg ${c.ico} grid place-items-center shrink-0">${T[k].icon}</span>
+          <span class="min-w-0"><span class="text-[12.5px] font-600 text-slate-800 block leading-tight truncate">${T[k].name}</span>
+          <span class="text-[10px] ${c.text} font-600">${T[k].loss}</span></span></button>`;}).join('')}</div></div>`;
+  }).join('');
+  modal(`<div class="flex items-center gap-2 mb-3"><h3 class="font-display font-700 text-lg text-navy">Master task list</h3>
+      <span class="text-[11px] font-600 bg-slate-100 text-slate-500 rounded-full px-2 py-0.5">${TOTAL_TASKS} tasks · 6 categories</span>
+      <button onclick="closeModal()" class="ml-auto text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button></div>
+    <input value="${state.browseQuery||''}" oninput="state.browseQuery=this.value;renderBrowse('${handler}')" placeholder="Search tasks or categories…" class="w-full text-sm rounded-xl border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white mb-3">
+    <div class="max-h-[52vh] overflow-y-auto scroll pr-1">${groups||'<p class="text-sm text-slate-400 py-6 text-center">No task matches.</p>'}</div>`,'lg');
+}
+
+/* ============================================================ SHARED LOGIC */
+function deriveUrgency(k,d){
+  const vals=Object.values(d).map(String);
+  if(vals.some(v=>/^(Major|Burst|High|Fail)$/i.test(v))) return 'High';
+  if(vals.some(v=>/^(Minor|Low|Weep)$/i.test(v))) return 'Low';
+  if(['repair_pipe','request_replace_main','replace_main','fuse_weld_pipe'].includes(k)) return 'Medium';
+  return 'Medium';
+}
+function validate(k,values,gps){
+  const tpl=T[k]; const missing=tpl.fields.filter(f=>f.req&&!values[f.k]).map(f=>f.label);
+  const locKeys=['location','address','point','zone','from','site'];
+  const hasLocField=tpl.fields.some(f=>locKeys.includes(f.k));
+  const hasLocVal=locKeys.some(x=>values[x]);
+  if(hasLocField&&!hasLocVal&&!gps) missing.push('Location / GPS');
+  return missing;
+}
+function buildTask(k,values,gps,channel,reporter){
+  const id=nextJobId(), ts=nowTs(), details={};
+  T[k].fields.forEach(f=>{if(values[f.k])details[f.k]=values[f.k];});
+  const loc=values.location||values.address||values.point||values.zone||values.site||(gps?`GPS ${gps.lat}, ${gps.lng}`:'—');
+  return {id,jobKey:k,title:T[k].name,loc,urgency:deriveUrgency(k,details),loss:T[k].loss,channel,status:'New',reporter,ts,gps,details};
+}
+function pushTask(t){state.tasks.unshift(t);updateQueueBadge();}
+function snake(l){return l.toLowerCase().replace(/\([^)]*\)/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');}
+function toIso(ts){if(!ts)return'';let s=String(ts).trim().replace(' ','T');if(/T\d{2}:\d{2}$/.test(s))s+=':00';return s;}
+function toSchema(t){
+  const tpl=T[t.jobKey]||{fields:[]}; const task_details={}; const photos=[];
+  tpl.fields.forEach(f=>{const v=t.details?t.details[f.k]:undefined; if(v===undefined||v==='')return;
+    if(f.type==='photo'||String(v).toLowerCase().endsWith('.jpg'))photos.push(v); else task_details[snake(f.label)]=v;});
+  const location={address:t.loc}; if(t.gps){location.latitude=t.gps.lat;location.longitude=t.gps.lng;}
+  return {issue:{id:t.id,job_type:t.title,category:CAT_LABEL[tpl.cat],iwa_asset:tpl.iwa,iwa_classification:t.loss,status:'Ready_For_Hydro1'},
+    report:{timestamp:toIso(t.ts),reported_by:(t.reporter||'').replace(/^@/,''),channel:t.channel},
+    location,task_details,attachments:{photos,documents:[]}};
+}
+function escapeHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+/* ============================================================ FIELD CREW VIEW */
+const fscreen=()=>document.getElementById('field-screen');
+function renderField(){
+  const g=state.game,f=state.field;
+  let body= f.step==='pick'?fieldPickHtml() : f.step==='capture'?fieldCaptureHtml() : f.step==='confirm'?fieldConfirmHtml() : fieldDoneHtml();
+  const steps=['pick','capture','confirm']; const idx=steps.indexOf(f.step); const prog=f.step==='done'?3:Math.max(0,idx);
+  fscreen().innerHTML=`
+    <div class="bg-navy text-white px-4 py-3 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-full bg-gradient-to-br from-flow to-blue-700 grid place-items-center text-sm">👷</div>
+      <div class="leading-tight"><p class="font-600 text-sm">Field Crew Bot</p><p class="text-[11px] text-slate-300">Hi Thinh · report in 3 taps</p></div>
+      <div class="ml-auto flex items-center gap-2 text-[12px] font-600">
+        <span class="bg-orange-500/20 text-orange-300 rounded-full px-2 py-0.5">🔥 ${g.streak}</span>
+        <span class="bg-yellow-400/20 text-yellow-300 rounded-full px-2 py-0.5">⭐ ${g.points}</span></div>
+    </div>
+    ${f.step!=='done'?`<div class="px-4 pt-3"><div class="flex gap-1.5">${[0,1,2].map(i=>`<div class="h-1.5 flex-1 rounded-full ${i<prog?'bg-emerald-400':(steps[i]===f.step?'bg-blue-500':'bg-slate-200')}"></div>`).join('')}</div>
+      <p class="text-[11px] text-slate-400 mt-1.5">${['1 · What happened?','2 · Show &amp; tell','3 · Confirm'][Math.max(0,idx)]}</p></div>`:''}
+    <div class="scroll flex-1 overflow-y-auto p-4">${body}</div>`;
+}
+function fieldPickHtml(){ return `<p class="font-display font-700 text-lg text-navy mb-3">What did you find?</p>${quickBar('fieldPick',true)}`; }
+function fieldPick(k){closeModal();state.field={step:'capture',jobKey:k,values:{},gps:null,scanned:false,voiced:false,busy:false,earned:0};renderField();}
+function fieldCaptureHtml(){
+  const f=state.field,k=f.jobKey,c=CAT_STYLE[T[k].cat],sc=SCAN[k]||SCAN._def,vo=VOICE[k]||VOICE._def;
+  const scanBtn=f.scanned
+    ?`<div class="rounded-2xl border-2 border-emerald-300 bg-emerald-50 p-3 flex items-center gap-3"><div class="w-12 h-12 rounded-xl bg-emerald-100 grid place-items-center text-2xl">✅</div>
+       <div><p class="text-[11px] font-600 text-emerald-700 uppercase tracking-wide">Vision scan</p><p class="text-[13px] font-600 text-slate-800">${sc.label}</p>
+       <p class="text-[11px] text-slate-500">${Object.values(sc.vals).join(' · ')||'photo attached'}</p></div></div>`
+    :`<button onclick="fieldScan()" ${f.busy?'disabled':''} class="w-full rounded-2xl border-2 border-dashed ${f.busy?'border-cyan-400':'border-slate-300'} p-4 text-center active:scale-95 transition">
+       ${f.busy?`<div class="scanbox rounded-xl bg-slate-800 h-24 grid place-items-center relative"><span class="text-3xl">📷</span><div class="scanline"></div></div><p class="text-[12px] font-600 text-cyan-600 mt-2">Scanning image…</p>`
+        :`<div class="w-14 h-14 mx-auto rounded-2xl ${c.ico} grid place-items-center text-3xl mb-1">📸</div><p class="font-600 text-[14px] text-slate-800">Snap a photo</p><p class="text-[11px] text-slate-400">AI reads the defect for you</p>`}</button>`;
+  const voiceBtn=f.voiced
+    ?`<div class="rounded-2xl border-2 border-blue-200 bg-blue-50 p-3"><p class="text-[11px] font-600 text-blue-700 uppercase tracking-wide mb-1">🎙️ Voice note · transcribed</p><p class="text-[13px] text-slate-700 italic leading-snug">"${vo.t}"</p></div>`
+    :`<button onclick="fieldVoice()" ${f.busy&&f.busy!=='rec'?'disabled':''} class="w-full rounded-2xl border-2 ${f.busy==='rec'?'border-red-300 bg-red-50':'border-slate-300'} p-4 flex items-center gap-3 active:scale-95 transition text-left">
+       ${f.busy==='rec'?`<div class="w-12 h-12 rounded-full bg-red-500 text-white grid place-items-center pulse-ring">⏺</div><div class="text-red-600"><div class="wave">${'<span></span>'.repeat(9)}</div><p class="text-[11px] font-600 mt-1">Recording… tap to stop</p></div>`
+        :`<div class="w-12 h-12 rounded-full ${c.ico} grid place-items-center text-2xl">🎙️</div><div><p class="font-600 text-[14px] text-slate-800">Tap to talk</p><p class="text-[11px] text-slate-400">Speaks → types itself</p></div>`}</button>`;
+  const gpsBtn=f.gps
+    ?`<div class="rounded-xl bg-emerald-50 border border-emerald-200 p-2.5 flex items-center gap-2 text-[13px] text-emerald-700 font-600"><span>📍</span> Location locked (${f.gps.lat}, ${f.gps.lng})</div>`
+    :`<button onclick="fieldGps()" class="w-full rounded-xl border-2 border-slate-300 p-2.5 flex items-center justify-center gap-2 text-[13px] font-600 text-slate-700 active:scale-95 transition"><span>📍</span> Share my location</button>`;
+  const ready=(f.scanned||f.voiced)&&f.gps;
+  return `<div class="flex items-center gap-2 mb-3"><div class="w-9 h-9 rounded-xl ${c.ico} grid place-items-center text-xl">${T[k].icon}</div>
+      <p class="font-600 text-slate-900 leading-tight text-[15px]">${T[k].name}</p>
+      <button onclick="state.field.step='pick';renderField()" class="ml-auto text-[11px] text-slate-400 font-500">change</button></div>
+    <div class="space-y-3">${scanBtn}${voiceBtn}${gpsBtn}</div>
+    <button onclick="state.field.step='confirm';renderField()" ${ready?'':'disabled'} class="mt-4 w-full rounded-2xl py-3.5 font-700 text-[15px] transition ${ready?'bg-blue-600 text-white active:scale-95 shadow-lift':'bg-slate-200 text-slate-400'}">${ready?'Next →':'Add photo or voice + location'}</button>`;
+}
+function fieldScan(){const f=state.field;f.busy=true;renderField();setTimeout(()=>{const s=SCAN[f.jobKey]||SCAN._def;Object.assign(f.values,s.vals);f.scanned=true;f.busy=false;renderField();toast('🤖',s.label);},1400);}
+function fieldVoice(){const f=state.field;if(f.busy==='rec'){const v=VOICE[f.jobKey]||VOICE._def;Object.assign(f.values,v.v);f.values.description=v.t;f.voiced=true;f.busy=false;renderField();toast('📝','Voice transcribed');}else{f.busy='rec';renderField();}}
+function fieldGps(){state.field.gps={lat:11.5564,lng:104.9282};renderField();toast('📍','Location shared');}
+function fieldConfirmHtml(){
+  const f=state.field,k=f.jobKey,c=CAT_STYLE[T[k].cat];
+  const chips=Object.entries(f.values).filter(([kk,v])=>v&&kk!=='description').map(([kk,v])=>{const lab=(T[k].fields.find(x=>x.k===kk)||{}).label||kk;return `<div class="flex justify-between gap-3 py-1.5 border-b border-slate-100"><span class="text-[11px] text-slate-400">${lab}</span><span class="text-[13px] font-600 text-slate-800 text-right">${v}</span></div>`;}).join('');
+  return `<div class="text-center mb-4"><div class="w-16 h-16 mx-auto rounded-2xl ${c.ico} grid place-items-center text-4xl mb-2">${T[k].icon}</div>
+      <p class="font-display font-700 text-lg text-navy">${T[k].name}</p>
+      <span class="inline-block mt-1 text-[11px] font-600 px-2 py-0.5 rounded-full ${LOSS_STYLE[T[k].loss]}">${T[k].loss}</span>
+      <p class="text-[10px] text-slate-400 mt-0.5">${CAT_LABEL[T[k].cat]}</p></div>
+    <div class="bg-white rounded-2xl border border-slate-200 p-3 mb-3">${chips||''}
+      <div class="flex justify-between gap-3 py-1.5"><span class="text-[11px] text-slate-400">Location</span><span class="text-[13px] font-600 text-slate-800">${f.gps?`${f.gps.lat}, ${f.gps.lng}`:(f.values.location||f.values.address||'—')}</span></div></div>
+    <p class="text-[11px] text-slate-400 text-center mb-3">Structured fields can be completed later at the desk.</p>
+    <div class="flex gap-2"><button onclick="state.field.step='capture';renderField()" class="flex-1 rounded-2xl py-3 font-600 text-slate-600 bg-slate-100 active:scale-95">Back</button>
+      <button onclick="fieldSubmit()" class="flex-1 rounded-2xl py-3 font-700 text-white bg-emerald-600 active:scale-95 shadow-lift">Send report ✓</button></div>`;
+}
+function fieldSubmit(){const f=state.field;pushTask(buildTask(f.jobKey,f.values,f.gps,'Field App','@field_thinh'));state.game.points+=15;state.game.today+=1;f.earned=15;f.step='done';renderField();}
+function fieldDoneHtml(){const g=state.game,f=state.field;
+  return `<div class="h-full flex flex-col items-center justify-center text-center py-8">
+    <div class="tickpop w-24 h-24 rounded-full bg-emerald-100 grid place-items-center mb-4"><span class="text-5xl">✅</span></div>
+    <p class="font-display font-700 text-2xl text-navy">Nice work!</p><p class="text-slate-500 text-sm mt-1">Report sent to the ops desk.</p>
+    <div class="flex gap-3 mt-5">
+      <div class="bg-yellow-50 border border-yellow-200 rounded-2xl px-5 py-3"><p class="text-2xl font-display font-700 text-yellow-600">+${f.earned}</p><p class="text-[11px] text-slate-500">points</p></div>
+      <div class="bg-orange-50 border border-orange-200 rounded-2xl px-5 py-3"><p class="text-2xl font-display font-700 text-orange-600">🔥 ${g.streak}</p><p class="text-[11px] text-slate-500">day streak</p></div>
+      <div class="bg-blue-50 border border-blue-200 rounded-2xl px-5 py-3"><p class="text-2xl font-display font-700 text-blue-600">${g.today}</p><p class="text-[11px] text-slate-500">today</p></div></div>
+    <button onclick="fieldReset()" class="mt-7 bg-blue-600 text-white font-700 rounded-2xl px-8 py-3.5 active:scale-95 shadow-lift">Report another</button>
+    <button onclick="setView('dashboard')" class="mt-3 text-[13px] text-slate-500 font-500">See it on the dashboard →</button></div>`;
+}
+function fieldReset(){state.field={step:'pick',jobKey:null,values:{},gps:null,scanned:false,voiced:false,busy:false,earned:0};renderField();}
+
+/* ============================================================ CALL CENTER VIEW */
+function renderCC(){
+  const cc=state.cc,el=document.getElementById('cc-body');
+  if(!cc.mode){el.innerHTML=ccModePickHtml();return;}
+  el.innerHTML= cc.mode==='guided'?ccGuidedHtml():ccAIHtml();
+}
+function ccModePickHtml(){
+  return `<div class="grid sm:grid-cols-2 gap-4">
+    <button onclick="ccSetMode('guided')" class="text-left rounded-2xl border-2 border-slate-200 hover:border-blue-400 hover:bg-blue-50 p-5 transition group">
+      <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 grid place-items-center text-2xl mb-3">🧭</div>
+      <p class="font-display font-700 text-lg text-navy">A · Guided structured report</p>
+      <p class="text-sm text-slate-500 mt-1">Pick the master task type and complete the step-by-step template. Best when the caller gives clear details.</p>
+      <p class="text-[12px] font-600 text-blue-600 mt-3 group-hover:underline">Start guided →</p></button>
+    <button onclick="ccSetMode('ai')" class="text-left rounded-2xl border-2 border-slate-200 hover:border-flow p-5 transition group bg-gradient-to-br from-white to-cyan-50/40">
+      <div class="w-12 h-12 rounded-xl bg-cyan-100 text-cyan-600 grid place-items-center text-2xl mb-3">✨</div>
+      <p class="font-display font-700 text-lg text-navy">B · Unstructured AI report</p>
+      <p class="text-sm text-slate-500 mt-1">Drop in a photo, a voice message or freeform notes. AI runs OCR + transcription, extracts entities and fills the template.</p>
+      <p class="text-[12px] font-600 text-flow mt-3 group-hover:underline">Start AI intake →</p></button>
+  </div>`;
+}
+function ccSetMode(m){state.cc={mode:m,stage:'pick',jobKey:null,values:{},gps:null,raw:'',srcImg:false,srcVoice:false,query:''};renderCC();}
+function ccBack(){state.cc.mode=null;renderCC();}
+function ccPickerHtml(onpick){
+  const q=(state.cc.query||'').toLowerCase();
+  const groups=Object.entries(CATEGORIES).map(([cat,keys])=>{
+    const items=keys.filter(k=>T[k].name.toLowerCase().includes(q)||cat.toLowerCase().includes(q));
+    if(!items.length) return '';
+    return `<div class="mb-3"><p class="text-[11px] font-600 uppercase tracking-wider text-slate-400 mb-1.5">${cat} <span class="text-slate-300">· ${keys.length}</span></p>
+      <div class="grid sm:grid-cols-2 gap-2">${items.map(k=>{const c=CAT_STYLE[T[k].cat];return `
+        <button onclick="${onpick}('${k}')" class="text-left px-3 py-2 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition flex items-center gap-2.5">
+          <span class="w-8 h-8 rounded-lg ${c.ico} grid place-items-center shrink-0">${T[k].icon}</span>
+          <span class="min-w-0"><span class="text-[12.5px] font-600 text-slate-800 block leading-tight truncate">${T[k].name}</span>
+          <span class="text-[10px] ${c.text} font-600">${T[k].loss}</span></span></button>`;}).join('')}</div></div>`;
+  }).join('');
+  return `${quickBar(onpick,false)}
+    <div class="my-3 flex items-center gap-2"><input value="${state.cc.query||''}" oninput="ccSearch(this.value)" placeholder="Search all ${TOTAL_TASKS} master task types…" class="flex-1 text-sm rounded-xl border border-slate-200 px-3 py-2 bg-slate-50 focus:bg-white"></div>
+    <div class="max-h-[360px] overflow-y-auto scroll pr-1">${groups||'<p class="text-sm text-slate-400 py-6 text-center">No task matches.</p>'}</div>`;
+}
+function ccSearch(v){state.cc.query=v;renderCC();}
+function ccGuidedHtml(){
+  const cc=state.cc,head=`<div class="flex items-center gap-2 mb-4"><button onclick="ccBack()" class="text-slate-400 text-sm font-500">← Modes</button><span class="text-slate-300">/</span><span class="text-sm font-600 text-navy">Guided structured report</span></div>`;
+  return head+(cc.jobKey?ccFormHtml('guided'):ccPickerHtml('ccGuidedPick'));
+}
+function ccGuidedPick(k){closeModal();state.cc.jobKey=k;state.cc.values={};renderCC();}
+function ccAIHtml(){
+  const cc=state.cc,head=`<div class="flex items-center gap-2 mb-4"><button onclick="ccBack()" class="text-slate-400 text-sm font-500">← Modes</button><span class="text-slate-300">/</span><span class="text-sm font-600 text-navy">Unstructured AI report</span></div>`;
+  if(cc.stage==='pick') return head+`<p class="text-sm text-slate-500 mb-3">1 · Which master task type is this about?</p>`+ccPickerHtml('ccAIPick');
+  if(cc.stage==='input') return head+ccAIInputHtml();
+  return head+ccFormHtml('ai');
+}
+function ccAIPick(k){closeModal();state.cc.jobKey=k;state.cc.stage='input';state.cc.raw='';state.cc.srcImg=false;state.cc.srcVoice=false;renderCC();}
+function ccAIInputHtml(){
+  const cc=state.cc,k=cc.jobKey,c=CAT_STYLE[T[k].cat];
+  return `<div class="flex items-center gap-2 mb-4"><span class="w-9 h-9 rounded-xl ${c.ico} grid place-items-center text-xl">${T[k].icon}</span>
+      <div><p class="font-600 text-navy leading-tight">${T[k].name}</p><p class="text-[11px] ${c.text} font-600">${T[k].loss} · ${CAT_LABEL[T[k].cat]}</p></div>
+      <button onclick="state.cc.stage='pick';renderCC()" class="ml-auto text-[11px] text-slate-400 font-500">change</button></div>
+    <p class="text-sm text-slate-500 mb-2">2 · Add any raw input — mix and match:</p>
+    <div class="grid sm:grid-cols-2 gap-2 mb-3">
+      <button onclick="ccOCR()" class="rounded-xl border border-slate-200 hover:border-cyan-400 p-3 flex items-center gap-2.5 transition ${cc.srcImg?'bg-cyan-50 border-cyan-300':''}">
+        <span class="w-9 h-9 rounded-lg bg-cyan-100 text-cyan-600 grid place-items-center text-lg">🖼️</span>
+        <span class="text-left"><span class="text-[13px] font-600 text-slate-800 block">${cc.srcImg?'Image added ✓':'Upload image'}</span><span class="text-[10px] text-slate-400">OCR → text</span></span></button>
+      <button onclick="ccVoice()" class="rounded-xl border border-slate-200 hover:border-cyan-400 p-3 flex items-center gap-2.5 transition ${cc.srcVoice?'bg-cyan-50 border-cyan-300':''}">
+        <span class="w-9 h-9 rounded-lg bg-cyan-100 text-cyan-600 grid place-items-center text-lg">🎧</span>
+        <span class="text-left"><span class="text-[13px] font-600 text-slate-800 block">${cc.srcVoice?'Voice added ✓':'Record voice'}</span><span class="text-[10px] text-slate-400">Transcribe → text</span></span></button></div>
+    <textarea oninput="state.cc.raw=this.value" rows="5" placeholder="…or type the caller's words here" class="w-full text-sm rounded-xl border border-slate-200 px-3 py-2.5 bg-slate-50 focus:bg-white leading-relaxed">${cc.raw}</textarea>
+    <button onclick="ccExtract()" ${cc.raw.trim()?'':'disabled'} class="mt-3 w-full rounded-xl py-3 font-700 text-white transition ${cc.raw.trim()?'bg-navy hover:bg-steel active:scale-[.99]':'bg-slate-200 text-slate-400'}">3 · Run AI extraction ✨</button>`;
+}
+function ccOCR(){state.cc.raw=(state.cc.raw?state.cc.raw+'\n':'')+'[OCR] Meter WM-4412 · reading 002317 · glass cracked, dripping at register. ';state.cc.srcImg=true;renderCC();toast('🔎','OCR added text from image');}
+function ccVoice(){const k=state.cc.jobKey;const s='[Voice] '+((VOICE[k]||VOICE._def).t);state.cc.raw=(state.cc.raw?state.cc.raw+'\n':'')+s;state.cc.srcVoice=true;renderCC();toast('📝','Voice transcribed to text');}
+function ccExtract(){const cc=state.cc;cc.values=aiExtract(cc.jobKey,cc.raw);cc.stage='mapped';renderCC();toast('✨','Entities extracted &amp; mapped');}
+function aiExtract(k,raw){
+  const tpl=T[k],text=(raw||'').toLowerCase(),v={};
+  const m=raw.match(/\b(?:at|near|on|address|lot)\s+([A-Za-z0-9][\w\s\-\/#,\.]{2,40})/i);
+  const loc=m?m[1].trim().replace(/[.,;]$/,''):'';
+  const meterM=raw.match(/\b(WM-?\d{3,6})\b/i),readM=raw.match(/reading\s*([0-9]{3,7})/i);
+  tpl.fields.forEach(f=>{
+    if(['location','address','point','zone','site'].includes(f.k)&&loc) v[f.k]=loc;
+    else if((f.k==='meter'||f.k==='existing')&&meterM) v[f.k]=meterM[1].toUpperCase();
+    else if((f.k==='reading'||f.k==='newreading')&&readM) v[f.k]=readM[1];
+    else if(f.k==='description'||f.k==='reason'||f.k==='summary') v[f.k]=raw.replace(/\[(OCR|Voice)\]/g,'').trim().slice(0,80);
+    else if(f.k==='category') v[f.k]='AI-classified: '+T[k].name;
+    else if(f.type==='select'){const hit=f.opts.find(o=>text.includes(o.toLowerCase().split(/[ \/]/)[0]));v[f.k]=hit||f.opts[0];}
+  });
+  if(v.severity!==undefined&&/(burst|flood|gush|major|badly)/.test(text)){const o=tpl.fields.find(f=>f.k==='severity').opts;v.severity=o[o.length-1];}
+  return v;
+}
+function ccFormHtml(mode){
+  const cc=state.cc,k=cc.jobKey,c=CAT_STYLE[T[k].cat],ex=mode==='ai';
+  const chips=ex?`<div class="mb-3 flex flex-wrap gap-1.5">${Object.entries(cc.values).filter(([kk,v])=>v).slice(0,6).map(([kk,v])=>`<span class="text-[11px] bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-full px-2 py-0.5">${(T[k].fields.find(x=>x.k===kk)||{}).label||kk}: ${String(v).slice(0,22)}</span>`).join('')}</div>`:'';
+  return `<div class="flex items-center gap-2 mb-3"><span class="w-9 h-9 rounded-xl ${c.ico} grid place-items-center text-xl">${T[k].icon}</span>
+      <div><p class="font-600 text-navy leading-tight">${T[k].name}</p><p class="text-[11px] ${c.text} font-600">${T[k].loss} · ${CAT_LABEL[T[k].cat]}</p></div>
+      <span class="ml-auto text-[11px] font-600 px-2 py-0.5 rounded-full ${ex?'bg-cyan-100 text-cyan-700':'bg-blue-100 text-blue-700'}">${ex?'AI-mapped · verify':'Guided'}</span></div>
+    ${ex?`<p class="text-[12px] text-slate-500 mb-2">4 · Verify the mapped fields, then submit. Edit anything the AI got wrong.</p>`:''}${chips}
+    <div class="grid sm:grid-cols-2 gap-3">${T[k].fields.map(f=>ccField(f)).join('')}</div>
+    <div class="flex gap-2 mt-4"><button onclick="${ex?"state.cc.stage='input';renderCC()":'ccGuidedReset()'}" class="rounded-xl px-4 py-2.5 text-sm font-600 text-slate-600 bg-slate-100 hover:bg-slate-200">${ex?'← Back':'Change task'}</button>
+      <button onclick="ccSubmit()" class="flex-1 rounded-xl py-2.5 text-sm font-700 text-white bg-blue-600 hover:bg-blue-700 shadow-sm">Validate &amp; submit</button></div>`;
+}
+function ccGuidedReset(){state.cc.jobKey=null;state.cc.values={};renderCC();}
+function ccField(f){
+  const id='cc_'+f.k,val=state.cc.values[f.k]||'';
+  const star=f.req?'<span class="text-red-500">*</span>':'<span class="text-slate-400 font-400">(optional)</span>';
+  const base='w-full text-[13.5px] rounded-lg border border-slate-200 px-2.5 py-2 bg-slate-50 focus:bg-white';let ctl='';
+  if(f.type==='select') ctl=`<select id="${id}" onchange="ccSet('${f.k}',this.value)" class="${base}"><option value="">Select…</option>${f.opts.map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('')}</select>`;
+  else if(f.type==='photo') ctl=`<button onclick="ccPhoto('${f.k}',this)" class="w-full text-[13px] rounded-lg border border-dashed border-slate-300 px-2.5 py-2 text-slate-500 hover:border-blue-400 hover:text-blue-600 transition flex items-center gap-2">${val?`<span class="text-emerald-600">✓ ${val}</span>`:'<span>📎 Attach</span>'}</button>`;
+  else ctl=`<input id="${id}" type="${f.type}" value="${String(val).replace(/"/g,'&quot;')}" placeholder="${f.ph||''}" oninput="ccSet('${f.k}',this.value)" class="${base}">`;
+  return `<div><label class="text-[11.5px] font-500 text-slate-500 mb-1 flex items-center gap-1">${f.label} ${star}</label>${ctl}</div>`;
+}
+function ccSet(k,v){state.cc.values[k]=v;}
+function ccPhoto(k,btn){state.cc.values[k]='photo_'+Math.floor(Math.random()*900+100)+'.jpg';btn.innerHTML=`<span class="text-emerald-600">✓ ${state.cc.values[k]}</span>`;btn.classList.add('border-emerald-300');}
+function ccSubmit(){
+  const cc=state.cc,k=cc.jobKey,missing=validate(k,cc.values,cc.gps);
+  if(missing.length){modal(`<div class="text-center"><div class="w-12 h-12 rounded-full bg-amber-100 text-amber-600 grid place-items-center mx-auto mb-2 text-2xl">⚠️</div>
+      <h3 class="font-display font-700 text-lg text-navy mb-1">Missing required information</h3><p class="text-sm text-slate-500 mb-3">Complete these before submitting:</p>
+      <ul class="text-left inline-block text-[13px] text-slate-700 space-y-1 mb-4">${missing.map(x=>`<li class="flex items-center gap-2"><span class="text-red-500">•</span>${x}</li>`).join('')}</ul>
+      <button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-blue-600 text-white font-600 text-sm">Back to form</button></div>`);return;}
+  const task=buildTask(k,cc.values,cc.gps,'Call Center','@cc_agent');pushTask(task);const schema=toSchema(task);
+  modal(`<div class="text-center mb-3"><div class="tickpop w-14 h-14 rounded-full bg-emerald-100 grid place-items-center mx-auto mb-2 text-3xl">✅</div>
+      <h3 class="font-display font-700 text-lg text-navy">Validated &amp; submitted</h3><p class="text-sm text-slate-500">${task.id} · standardized to master schema</p></div>
+    <pre class="bg-navy text-slate-200 rounded-xl p-3 text-[11px] font-mono overflow-x-auto whitespace-pre max-h-52 scroll">${escapeHtml(JSON.stringify(schema,null,2))}</pre>
+    <div class="flex gap-2 mt-3"><button onclick="closeModal();ccSetMode('${cc.mode}')" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-600 text-sm">New report</button>
+      <button onclick="closeModal();setView('dashboard')" class="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-600 text-sm">Open dashboard →</button></div>`);
+}
+
+/* ============================================================ DASHBOARD */
+function updateQueueBadge(){const n=state.tasks.filter(t=>t.status==='New').length;const b=document.getElementById('queue-badge');b.textContent=n;b.classList.toggle('hidden',n===0||state.view==='dashboard');}
+function renderDashboard(){document.getElementById('queue-badge').classList.add('hidden');renderStats();renderTabs();renderTable();}
+function renderStats(){
+  const c={New:state.tasks.filter(t=>t.status==='New').length,Opened:state.tasks.filter(t=>t.status==='Opened').length};
+  const cfg=[['amber','New · untouched',c.New,"setTab('New')"],['blue','Opened · started',c.Opened,"setTab('Opened')"],['slate','Total records',state.tasks.length,"setTab('All Tasks')"]];
+  const txt={amber:'text-amber-600',blue:'text-blue-600',slate:'text-slate-600'};
+  document.getElementById('stat-row').innerHTML=cfg.map(([col,label,n,click])=>`<button onclick="${click}" class="text-left bg-white rounded-xl border border-slate-200 px-3.5 py-2 shadow-card hover:border-blue-300 transition"><p class="text-2xl font-display font-700 ${txt[col]} leading-none">${n}</p><p class="text-[10.5px] text-slate-500 mt-1 whitespace-nowrap">${label}</p></button>`).join('');
+}
+function renderTabs(){const tabs=['All Tasks',...STATUSES];document.getElementById('tabs').innerHTML=tabs.map(t=>{const a=state.activeTab===t;const n=t==='All Tasks'?state.tasks.length:state.tasks.filter(x=>x.status===t).length;return `<button onclick="setTab('${t}')" class="relative py-3 whitespace-nowrap ${a?'tab-active font-600':'hover:text-slate-700'}">${t} <span class="text-[11px] ${a?'text-blue-500':'text-slate-400'}">${n}</span></button>`;}).join('');}
+function setTab(t){state.activeTab=t;renderTabs();renderTable();}
+function renderTable(){
+  const rows=state.activeTab==='All Tasks'?state.tasks:state.tasks.filter(t=>t.status===state.activeTab);
+  const body=document.getElementById('task-body');document.getElementById('empty-state').classList.toggle('hidden',rows.length>0);
+  body.innerHTML=rows.map(t=>`<tr class="hover:bg-slate-50 transition ${t.status==='New'?'bg-amber-50/40':''}">
+    <td class="px-5 py-3"><div class="flex items-center gap-2.5"><span class="text-base">${T[t.jobKey]?.icon||'📋'}</span>
+      <div><p class="font-600 text-slate-900 text-[13px]">${t.title}</p><div class="flex items-center gap-1.5 mt-0.5"><span class="font-mono text-[10px] text-slate-400">${t.id}</span><span class="text-[9px] font-600 px-1.5 py-0.5 rounded-full ${LOSS_STYLE[t.loss]}">${t.loss}</span></div></div></div></td>
+    <td class="px-3 py-3 text-slate-600 text-[12.5px] max-w-[150px] truncate">${t.loc}</td>
+    <td class="px-3 py-3 text-slate-500 text-[12.5px]">${t.channel}</td>
+    <td class="px-3 py-3 text-slate-500 font-mono text-[11px]">${t.ts}</td>
+    <td class="px-3 py-3"><span class="text-[11px] font-600 px-2 py-0.5 rounded-full ${STATUS_STYLE[t.status]}">${t.status}</span></td>
+    <td class="px-3 py-3 text-right">${actionBtn(t)}</td></tr>`).join('');
+}
+function actionBtn(t){
+  const primary=t.status==='New'?`<button onclick="openRecord('${t.id}')" class="text-[12px] font-600 text-white bg-blue-600 hover:bg-blue-700 rounded-lg px-3 py-1.5 transition">Open</button>`:`<button onclick="openRecord('${t.id}')" class="text-[12px] font-600 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg px-3 py-1.5 transition">View</button>`;
+  const exp=`<button onclick="exportRecord('${t.id}')" title="Export JSON" class="ml-1 text-flow hover:text-blue-700 rounded-lg px-2 py-1.5 transition"><svg viewBox="0 0 24 24" class="w-4 h-4 inline" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/></svg></button>`;
+  return `<div class="inline-flex items-center">${primary}${exp}</div>`;
+}
+function openRecord(id){const t=state.tasks.find(x=>x.id===id);if(!t)return;if(t.status==='New'){t.status='Opened';toast('📂','Record opened · marked as started');}renderDashboard();showRecordModal(t);}
+function schemaGroupsHtml(schema){
+  return [['Issue','issue'],['Report','report'],['Location','location'],['Task Details','task_details'],['Attachments','attachments']].map(([label,key])=>{const obj=schema[key]||{};
+    const rows=Object.entries(obj).map(([k,v])=>{let val=Array.isArray(v)?(v.length?v.join(', '):'—'):(v===''||v==null?'—':v);return `<div class="flex justify-between gap-3 py-1 border-b border-slate-100 last:border-0"><span class="text-slate-400 text-[11px] font-mono">${k}</span><span class="text-slate-700 text-[12px] font-500 text-right break-words max-w-[62%]">${escapeHtml(String(val))}</span></div>`;}).join('')||'<p class="text-[11px] text-slate-400 py-1">—</p>';
+    return `<div class="rounded-xl border border-slate-200 p-3"><p class="text-[10px] uppercase tracking-wider text-flow font-600 mb-1.5">${label}</p>${rows}</div>`;}).join('');
+}
+function showRecordModal(t){
+  const schema=toSchema(t),pretty=JSON.stringify(schema,null,2);
+  modal(`<div class="flex items-start gap-2 mb-3"><span class="text-xl">${T[t.jobKey]?.icon||'📋'}</span>
+      <div><h3 class="font-display font-700 text-lg text-navy leading-tight">${t.title}</h3><p class="font-mono text-[11px] text-slate-400">${t.id} · ${t.reporter} · ${t.channel}</p></div>
+      <div class="ml-auto flex flex-col items-end gap-1"><span class="text-[11px] font-600 px-2 py-0.5 rounded-full ${STATUS_STYLE[t.status]}">${t.status}</span><span class="text-[10px] font-600 px-2 py-0.5 rounded-full ${LOSS_STYLE[t.loss]}">${t.loss}</span></div></div>
+    <p class="text-[11px] text-slate-500 mb-3 flex items-center gap-1.5"><svg viewBox="0 0 24 24" class="w-3.5 h-3.5 text-flow" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16"/></svg>Standardized issue record · Phase 1 master schema</p>
+    <div class="grid sm:grid-cols-2 gap-2 mb-3">${schemaGroupsHtml(schema)}</div>
+    <details class="mb-3"><summary class="cursor-pointer text-[12px] font-600 text-slate-600 select-none">View export JSON</summary>
+      <pre class="mt-2 bg-navy text-slate-200 rounded-xl p-3 text-[11px] font-mono overflow-x-auto whitespace-pre">${escapeHtml(pretty)}</pre></details>
+    <div class="flex gap-2"><button onclick="copyRecord('${t.id}')" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-600 text-sm hover:bg-slate-50">Copy JSON</button>
+      <button onclick="exportRecord('${t.id}')" class="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-600 text-sm flex items-center justify-center gap-1.5"><svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/></svg>Export .json</button></div>`);
+}
+function download(name,text){try{const b=new Blob([text],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove();},120);toast('⤓','Downloaded '+name);}catch(e){toast('⚠️','Download blocked — use Copy JSON');}}
+function copyText(text){const done=()=>toast('✓','JSON copied to clipboard');if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text,done));}else fallbackCopy(text,done);}
+function fallbackCopy(text,done){const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');done();}catch(e){toast('⚠️','Copy blocked in preview');}ta.remove();}
+function exportRecord(id){const t=state.tasks.find(x=>x.id===id);if(t)download(id+'.json',JSON.stringify(toSchema(t),null,2));}
+function copyRecord(id){const t=state.tasks.find(x=>x.id===id);if(t)copyText(JSON.stringify(toSchema(t),null,2));}
+function exportAll(){download('issue_records_'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(state.tasks.map(toSchema),null,2));}
+
+/* ---- modal + toast ---- */
+function modal(inner,size){const w=size==='lg'?'max-w-2xl':'max-w-md';document.getElementById('modal-root').innerHTML=`<div class="fixed inset-0 z-50 bg-navy/40 backdrop-blur-sm grid place-items-center p-4" onclick="if(event.target===this)closeModal()"><div class="pop bg-white rounded-2xl shadow-lift w-full ${w} p-5 max-h-[90vh] overflow-y-auto scroll">${inner}</div></div>`;}
+function closeModal(){document.getElementById('modal-root').innerHTML='';}
+let toastTimer;function toast(icon,msg){document.getElementById('toast-icon').textContent=icon;document.getElementById('toast-msg').innerHTML=msg;const t=document.getElementById('toast');t.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.add('hidden'),2600);}
+
+/* ---- init ---- */
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+setView('field');
+updateQueueBadge();
+</script>
+</body>
+</html>
