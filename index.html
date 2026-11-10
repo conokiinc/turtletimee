@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where's Turtletimee? — The Great Rescue</title>
+<meta name="description" content="A birthday adventure. A Duckquackquack Studios production.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="frame">
+    <canvas id="game" width="1280" height="720" aria-label="Game"></canvas>
+    <div id="ui">
+      <div id="hud" hidden></div>
+      <div id="layer"></div>
+      <div id="dialogue" class="dialogue" aria-live="polite">
+        <canvas id="dPortrait" width="240" height="250"></canvas>
+        <div class="d-body">
+          <div class="d-head"><span id="dName"></span><span id="dTag"></span></div>
+          <p id="dText"></p>
+          <span id="dMore" hidden>▼ Enter / Space</span>
+        </div>
+      </div>
+      <div id="toasts"></div>
+      <div id="fade"></div>
+      <button id="muteBtn" type="button" aria-label="Mute">🔊</button>
+    </div>
+  </div>
+  <noscript><p class="nojs">This game needs JavaScript turned on.</p></noscript>
+  <div id="tooSmall"><p>This game is made for a laptop or desktop browser.<br>Please make the window bigger (at least 960 × 540).</p></div>
+
+  <script src="js/core.js"></script>
+  <script src="js/save.js"></script>
+  <script src="js/content.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/characters.js"></script>
+  <script src="js/art.js"></script>
+  <script src="js/scenes.js"></script>
+  <script src="js/world1.js"></script>
+  <script src="js/art2.js"></script>
+  <script src="js/world2.js"></script>
+  <script src="js/art3.js"></script>
+  <script src="js/world3.js"></script>
+  <script src="js/finale.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
